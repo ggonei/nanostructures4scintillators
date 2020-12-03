@@ -1,0 +1,14 @@
+# ninja log v5
+46	1636	1606968771275531400	CMakeFiles/OpNovice2.dir/src/ActionInitialization.cc.o	ffb6d5cff4c8d1ce
+51	2073	1606968771713156200	CMakeFiles/OpNovice2.dir/src/PrimaryGeneratorAction.cc.o	9439dba90539579a
+56	2093	1606968771718277000	CMakeFiles/OpNovice2.dir/src/PrimaryGeneratorMessenger.cc.o	ffa1551804276146
+49	3243	1606968772885072800	CMakeFiles/OpNovice2.dir/src/DetectorConstruction.cc.o	cf9caf9f5b775cf6
+48	3287	1606968772925811800	CMakeFiles/OpNovice2.dir/src/DetectorMessenger.cc.o	82dbad800efa5158
+54	3294	1606968772925811800	CMakeFiles/OpNovice2.dir/src/Run.cc.o	7482c2b8eaa4cd62
+45	3605	1606968773246165800	CMakeFiles/OpNovice2.dir/OpNovice2.cc.o	352c1b249a080d80
+1679	3895	1606968773531166800	CMakeFiles/OpNovice2.dir/src/TrackInformation.cc.o	8d0baedc54b62859
+2087	4443	1606968774086244600	CMakeFiles/OpNovice2.dir/src/TrackingAction.cc.o	69629f3b5a0b5349
+53	4813	1606968774457643100	CMakeFiles/OpNovice2.dir/src/HistoManager.cc.o	e28336eab3dc5882
+59	5449	1606968775093268000	CMakeFiles/OpNovice2.dir/src/RunAction.cc.o	64aefebfc9dbfe20
+58	5612	1606968775238389500	CMakeFiles/OpNovice2.dir/src/SteppingAction.cc.o	2ab6d2e108c95f8f
+5618	7090	1606968776723321700	OpNovice2	998d7b34023c1743

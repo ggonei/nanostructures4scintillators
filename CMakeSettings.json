@@ -1,0 +1,56 @@
+﻿{
+	"configurations":
+	[
+		{
+			"name": "WSL-GCC-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeExecutable": "cmake",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "",
+			"ctestCommandArgs": "",
+			"inheritEnvironments":
+			[
+				"linux_x64"
+			],
+			"wslPath": "${defaultWSLPath}",
+			"addressSanitizerRuntimeFlags": "detect_leaks=0",
+			"enableClangTidyCodeAnalysis": true,
+			"enableMicrosoftCodeAnalysis": true,
+			"variables":
+			[
+				{
+					"name": "CMAKE_CXX_FLAGS",
+					"value": "-g -m64 -pthread -pipe -ftls-model=initial-exec -std=c++11 -DG4INTY_USE_XT -DG4VIS_USE_OPENGL -DG4UI_USE_TCSH -DG4INTY_USE_QT -DG4UI_USE_QT -DG4VIS_USE_OPENGLQT -DG4VIS_USE_RAYTRACERX -DG4VIS_USE_OPENGLX -isystem /usr/include/x86_64-linux-gnu/qt5/ -isystem /usr/include/x86_64-linux-gnu/qt5/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt5//mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt5/QtGui -isystem /usr/include/x86_64-linux-gnu/qt5/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt5/QtOpenGL -isystem /usr/include/x86_64-linux-gnu/qt5/QtPrintSupport -I/usr/include/x86_64-linux-gnu/qt5/ -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/lib/x86_64-linux-gnu/qt5//mkspecs/linux-g++ -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtPrintSupport -isystem /home/gon/geant4.10.06.p03-install/bin/../include/Geant4 -I/home/gon/geant4.10.06.p03-install/bin/../include/Geant4 -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wno-variadic-macros -Wshadow", // -Wall -pedantic -pedantic-errors -Wextra -Werror -Wcast-align -Wcast-qual -Wchar-subscripts -Wcomment -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport -Winit-self -Winline -Winvalid-pch -Wlong-long -Wmissing-braces -Wmissing-field-initializers -Wmissing-format-attribute -Wmissing-include-dirs -Wmissing-noreturn -Wpacked -Wparentheses -Wpointer-arith -Wredundant-decls -Wreturn-type -Wsequence-point -Wshadow -Wsign-compare -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default -Wswitch-enum -Wtrigraphs -Wuninitialized -Wunknown-pragmas -Wunreachable-code -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value -Wunused-variable -Wvariadic-macros -Wvolatile-register-var -Wwrite-strings -Wno-long-long",
+					"type": "STRING"
+				},
+				{
+					"name": "CMAKE_EXE_LINKER_FLAGS",
+					"value": "-m64 -rdynamic -pthread -L/home/gon/geant4.10.06.p03-install/bin/../lib  -Wl,-rpath -Wl,/home/gon/geant4.10.06.p03-install/bin/../lib -Wl,--no-as-needed -lG4OpenGL -lG4gl2ps -lG4Tree -lG4FR -lG4GMocren -lG4visHepRep -lG4RayTracer -lG4VRML -lG4vis_management -lG4modeling -lG4interfaces -lG4persistency -lG4analysis -lG4error_propagation -lG4readout -lG4physicslists -lG4run -lG4event -lG4tracking -lG4parmodels -lG4processes -lG4digits_hits -lG4track -lG4particles -lG4geometry -lG4materials -lG4graphics_reps -lG4intercoms -lG4global -lG4clhep -lG4zlib",
+					"type": "STRING"
+				}
+			],
+			"environments":
+			[
+				{
+					"DISPLAY": ":10.0",
+					"G4ABLADATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4ABLA3.1",
+					"G4ENSDFSTATEDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4ENSDFSTATE2.2",
+					"G4INCLDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4INCL1.0",
+					"G4LEDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4EMLOW7.9.1",
+					"G4LEVELGAMMADATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/PhotonEvaporation5.5",
+					"G4NEUTRONHPDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4NDL4.6",
+					"G4PARTICLEXSDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4PARTICLEXS2.1",
+					"G4PIIDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4PII1.3",
+					"G4RADIOACTIVEDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/RadioactiveDecay5.4",
+					"G4REALSURFACEDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/RealSurface2.1.1",
+					"G4SAIDXSDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4SAIDDATA2.0",
+					"XDG_DATA_DIRS": "/usr/local/share:/usr/share:/var/lib/snapd/desktop",
+					"XDG_RUNTIME_DIR": "/tmp/runtime-gon"
+				}
+			]
+		}
+	]
+}

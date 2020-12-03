@@ -1,0 +1,3 @@
+/mnt/c/Users/ggon0/source/repos/MyDetector/out/build/WSL-GCC-Debug/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/ggon0/source/repos/MyDetector/out/build/WSL-GCC-Debug/CMakeFiles/OpNovice2.dir
+/mnt/c/Users/ggon0/source/repos/MyDetector/out/build/WSL-GCC-Debug/CMakeFiles/edit_cache.dir
