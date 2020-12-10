@@ -1,110 +1,61 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-/// \file optical/OpNovice2/src/RunAction.cc
-/// \brief Implementation of the RunAction class
-//
-// 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-// Make this appear first!
-#include "G4Timer.hh"
-
 #include "RunAction.hh"
-#include "HistoManager.hh"
-#include "PrimaryGeneratorAction.hh"
 
-#include "Run.hh"
-#include "G4Run.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+RunAction::RunAction( PrimaryGeneratorAction *prim ): G4UserRunAction(), fTimer( nullptr ), fRun( nullptr ), fHistoManager( nullptr ), fPrimary( prim ){	//	default constructor
 
-RunAction::RunAction(PrimaryGeneratorAction* prim)
- : G4UserRunAction(),
-   fTimer(nullptr),
-   fRun(nullptr),
-   fHistoManager(nullptr),
-   fPrimary(prim)
-{
-  fTimer = new G4Timer;
-  fHistoManager = new HistoManager();
-}
+	fTimer = new G4Timer;	//	create timer
+	fHistoManager = new HistoManager();	//	create histogrammer
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}	//	end default constructor
 
-RunAction::~RunAction()
-{
-  delete fTimer;
-  delete fHistoManager;
-}
 
-G4Run* RunAction::GenerateRun()
-{
-  fRun = new Run();
-  return fRun;
-}
+RunAction::~RunAction(){	//	clean up commands
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+	delete fTimer;
+	delete fHistoManager;
 
-void RunAction::BeginOfRunAction(const G4Run* aRun)
-{
-  G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
+}	//	end destructor
 
-  if (fPrimary) {
-    G4ParticleDefinition* particle = 
-      fPrimary->GetParticleGun()->GetParticleDefinition();
-    G4double energy = fPrimary->GetParticleGun()->GetParticleEnergy();
-    fRun->SetPrimary(particle, energy);
-  }
 
-  //histograms
-  G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
-  if (analysisManager->IsActive()) {
-    analysisManager->OpenFile();
-  }
+G4Run *RunAction::GenerateRun(){	//	create run
 
-  fTimer->Start();
-}
+	fRun = new Run();	//	initialse run stored in object
+	return fRun;	//	return run to program
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}	//	end GenerateRun()
 
-void RunAction::EndOfRunAction(const G4Run* aRun)
-{
-  fTimer->Stop();
-  G4cout << "number of event = " << aRun->GetNumberOfEvent()
-         << " " << *fTimer << G4endl;
 
-  if (isMaster) fRun->EndOfRun();
+void RunAction::BeginOfRunAction( const G4Run *aRun ){	//	action at start of run
 
-  // save histograms
-  G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
-  if (analysisManager->IsActive()) {
-    analysisManager->Write();
-    analysisManager->CloseFile();
-  }
-}
+	G4cout << aRun->GetRunID() << " run started" << G4endl;	//	let user know the run is happening
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+	if( fPrimary )	//	if we have everything initialised
+		fRun->SetPrimary( fPrimary->GetParticleGun()->GetParticleDefinition(), fPrimary->GetParticleGun()->GetParticleEnergy() );	//	set a primary event
+
+	if( analysisManager->IsActive() )	//	if there is an active analysis manager
+		analysisManager->OpenFile();	//	open it for output
+
+	fTimer->Start();	//	start timer
+
+}	//	end BeginOfRunAction( G4Run* )
+
+
+void RunAction::EndOfRunAction( const G4Run *aRun ){	//	action at end of run
+
+	fTimer->Stop();	//	stop timer
+	G4cout << aRun->GetNumberOfEvent() << " finished with time " << *fTimer << G4endl;	//	let user know which run has ended
+
+	if( isMaster )	//	if run action is master
+		fRun->EndOfRun();	//	end run
+
+	if( analysisManager->IsActive() ){	//	if there is an active analysis manager
+
+		analysisManager->Write();	//	write this run
+		analysisManager->CloseFile();	//	close output
+
+	}	//	end check for active analysis manager
+
+}	//	end EndOfRunAction( G4Run* )

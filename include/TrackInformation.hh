@@ -1,80 +1,77 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-/// \file optical/OpNovice2/include/TrackInformation.hh
-/// \brief Definition of the TrackInformation class
+//  Make a basic cube that allows for addition of photonic objects
 //
+//	This contains information on the steps
 //
-//
-
 #ifndef TrackInformation_h
 #define TrackInformation_h 1
 
-#include "globals.hh"
-#include "G4ThreeVector.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4Track.hh"
-#include "G4Allocator.hh"
-#include "G4VUserTrackInformation.hh"
+//	Geant libraries
+#include <G4Allocator.hh>
+#include <G4ios.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4SystemOfUnits.hh>    
+#include <G4ThreeVector.hh>
+#include <G4Track.hh>
+#include <G4VUserTrackInformation.hh>
+#include <globals.hh>
 
-class TrackInformation : public G4VUserTrackInformation 
-{
-public:
-  TrackInformation();
-  TrackInformation(const G4Track* aTrack);
-  TrackInformation(const TrackInformation* aTrackInfo);
-  virtual ~TrackInformation();
-   
-  inline void *operator new(size_t);
-  inline void operator delete(void *aTrackInfo);
 
-  TrackInformation& operator =(const TrackInformation& right);
-  
-  void SetSourceTrackInformation(const G4Track* aTrack);
-  virtual void Print() const;
+class TrackInformation: public G4VUserTrackInformation{
 
 public:
-  inline G4bool GetIsFirstTankX() const {return fFirstTankX;}
-  inline void   SetIsFirstTankX(G4bool b) {fFirstTankX = b;}
+	TrackInformation(): G4VUserTrackInformation(){
+		fFirstCrystalX = true;
+	};	//	default constructor
+	TrackInformation( const TrackInformation *aTrackInfo ): G4VUserTrackInformation(){
+		fFirstCrystalX = aTrackInfo->fFirstCrystalX;
+	};	//	constructor with track information
+	~TrackInformation(){};	//	default destructor
+
+	inline void *operator new( size_t );	//	reference to overload operator new
+	inline void operator delete( void *aTrackInfo );	//	reference to overload operator delete
+	TrackInformation &operator =( const TrackInformation &aTrackInfo ){
+		fFirstCrystalX = aTrackInfo.fFirstCrystalX; return *this;
+	};	//	overload operator =
+	void SetSourceTrackInformation(){
+		fFirstCrystalX = true;
+	};	//	inform where to fetch track information from
+	virtual void Print() const{
+		G4cout << "first time track incident on X: " << fFirstCrystalX << G4endl;
+	};	//	print track information
+	inline G4bool GetIsFirstCrystalX() const{	//	fetch first crystal flag
+		return fFirstCrystalX;
+	}
+	inline void SetIsFirstCrystalX( G4bool b ){	//	set firstcrystal flag
+		fFirstCrystalX = b;
+	}
+
 
 private:
-  G4bool    fFirstTankX;
-};
+	G4bool fFirstCrystalX;	//	first crystal flag
 
-extern G4ThreadLocal
- G4Allocator<TrackInformation> * aTrackInformationAllocator;
+};	//	end TrackInformation
 
-inline void* TrackInformation::operator new(size_t)
-{
-  if(!aTrackInformationAllocator)
-    aTrackInformationAllocator = new G4Allocator<TrackInformation>;
-  return (void*)aTrackInformationAllocator->MallocSingle();
-}
 
-inline void TrackInformation::operator delete(void *aTrackInfo)
-{ aTrackInformationAllocator->FreeSingle((TrackInformation*)aTrackInfo);}
+extern G4ThreadLocal	//	work on correct thread
+G4Allocator<TrackInformation> *TIAllocator;	//	define allocator
 
+
+inline void *TrackInformation::operator new( size_t ){	//	overload new operator for track information
+
+	if( !TIAllocator )	//	if there is no allocator
+		TIAllocator = new G4Allocator<TrackInformation>;	//	then make one
+
+	return (void *)TIAllocator->MallocSingle();	//	allocate memory for new allocator
+
+}	//	end operator new
+
+
+inline void TrackInformation::operator delete( void *aTrackInfo ){	//	overload delete operator for track information
+
+	TIAllocator->FreeSingle( (TrackInformation *)aTrackInfo );	//	release allocator memory
+
+}	//	end operator delete
 #endif
-

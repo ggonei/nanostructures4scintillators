@@ -1,330 +1,162 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-/// \file optical/OpNovice2/src/Run.cc
-/// \brief Implementation of the Run class
-//
-// 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-#include <numeric>
-
 #include "Run.hh"
-#include "DetectorConstruction.hh"
+#include "MyDetectorConstruction.hh"
 
-#include "G4OpBoundaryProcess.hh"
-#include "G4SystemOfUnits.hh"
-#include "G4UnitsTable.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-Run::Run() 
-: G4Run()
-{
-  fParticle = nullptr;
-  fEkin = -1.;
-  
-  fCerenkovEnergy = 0.0;
-  fScintEnergy = 0.0;
-  
-  fCerenkovCount = 0;
-  fScintCount = 0;
-  fRayleighCount = 0;
+Run::Run(): G4Run(){
 
-  fOpAbsorption = 0;
-  fOpAbsorptionPrior = 0;
+	int n = 50;	//	number of conditions
+	fBoundaryProcs.clear();	//	reset boundary conditions
+	fBoundaryProcs.resize( n );	//	resize boundary processes
+	fEk = -1.;	//	set to a non physical energy
+	fOpAbs = 0;	//	absorption amount set to nothing
+	fOpAbsPrior = 0;	//	prior absorption
+	fParticle = nullptr;	//	initialise particle
+	fRayleighN = 0;	//	number of rayleigh photons initialised
+	fScintN = 0;	//	number of scintillated photons initialised
+	fScintE = 0.0;	//	scintillation energy not moving
+	fTotSurf = 0;	//	total surface amount initilaised
 
-  fTotalSurface = 0;
+	for( G4int i = 0; i < n; ++i )	//	loop over boundary processes
+		fBoundaryProcs[i] = 0;	//	set boundary processes to zero
 
-  fBoundaryProcs.clear();
-  fBoundaryProcs.resize(40);
-  for (G4int i = 0; i < 40; ++i) {
-    fBoundaryProcs[i] = 0;
-  }
-}
+}	//	end default constructor
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-Run::~Run()
-{}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void Run::SetPrimary(G4ParticleDefinition* particle, G4double energy)
-{
-  fParticle = particle;
-  fEkin = energy;
-}
+void Run::SetPrimary( G4ParticleDefinition *particle, G4double energy ){	//	set primary particle
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void Run::Merge(const G4Run* run)
-{
-  const Run* localRun = static_cast<const Run*>(run);
+	fEk = energy;	//	set energy
+	fParticle = particle;	//	set particle
 
-  // pass information about primary particle
-  fParticle = localRun->fParticle;
-  fEkin     = localRun->fEkin;
+}	//	end SetPrimary( G4ParticleDefinition*, G4double )
 
-  fCerenkovEnergy += localRun->fCerenkovEnergy;
-  fScintEnergy    += localRun->fScintEnergy;
 
-  fCerenkovCount  += localRun->fCerenkovCount;
-  fScintCount     += localRun->fScintCount;
-  fRayleighCount  += localRun->fRayleighCount;
-  
-  fTotalSurface   += localRun->fTotalSurface;
-  
-  fOpAbsorption   += localRun->fOpAbsorption;
-  fOpAbsorptionPrior += localRun->fOpAbsorptionPrior;
+void Run::Merge( const G4Run *R ){	//	merge particles
 
-  for (size_t i = 0; i < fBoundaryProcs.size(); ++i) {
-    fBoundaryProcs[i] += localRun->fBoundaryProcs[i];
-  }
+	const Run *localR = static_cast<const Run *>( R );	//	redefine run
+	fEk = localR->fEk;	//	set energy from particle
+	fOpAbs += localR->fOpAbs;	//	add absorption amount from particle
+	fOpAbsPrior += localR->fOpAbsPrior;	//	add amount absorbed previous from particle
+	fParticle = localR->fParticle;	//	set particle from particle
+	fScintN += localR->fScintN;	//	add scintillation count from particle
+	fScintE += localR->fScintE;	//	add scintillation energy from particle
+	fTotSurf += localR->fTotSurf;	//	add surface from particle
 
-  G4Run::Merge(run);
-}
+	for( size_t i = 0; i < fBoundaryProcs.size(); ++i )	//	for each boundary process
+		fBoundaryProcs[i] += localR->fBoundaryProcs[i];	//	add processes
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void Run::EndOfRun()
-{
-  G4int TotNbofEvents = numberOfEvent;
-  if (TotNbofEvents == 0) return;
+	G4Run::Merge( R );	//	merge particle in main geant class
 
-  const DetectorConstruction* det = (const DetectorConstruction*)
-    (G4RunManager::GetRunManager()->GetUserDetectorConstruction()); 
+}	//	end Merge( G4run* )
 
-  std::ios::fmtflags mode = G4cout.flags();
-  G4int prec = G4cout.precision(2);
 
-  G4cout << "\n    Run Summary\n";
-  G4cout <<   "---------------------------------\n";
-  G4cout << "Primary particle was: " << fParticle->GetParticleName() 
-         << " with energy " << G4BestUnit(fEkin, "Energy") << "." << G4endl;
+void Run::EndOfRun(){	//	when particle is done run processes
 
-  G4cout << "Material of world: " << det->GetWorldMaterial()->GetName()
-         << G4endl;
-  G4cout << "Material of tank:  " << det->GetTankMaterial()->GetName()
-         << G4endl << G4endl;
+	const G4int prec = G4cout.precision( 3 ), sum = std::accumulate( fBoundaryProcs.begin(), fBoundaryProcs.end(), 0 ), totEvents = numberOfEvent;	//	set precision, accumulated number, total number of event
 
-  if (fParticle->GetParticleName() != "opticalphoton") {
-    G4cout << "Average energy of Cerenkov photons created per event: " 
-           << (fCerenkovEnergy/eV)/TotNbofEvents << " eV." << G4endl;
-    G4cout << "Average number of Cerenkov photons created per event: " 
-           << fCerenkovCount/TotNbofEvents << G4endl;
-    if (fCerenkovCount > 0) { 
-      G4cout << " Average energy: " << (fCerenkovEnergy/eV)/fCerenkovCount 
-             << " eV." << G4endl;
-    }
-    G4cout << "Average energy of scintillation photons created per event: " 
-           << (fScintEnergy/eV)/TotNbofEvents << " eV." << G4endl;
-    G4cout << "Average number of scintillation photons created per event: " 
-           << fScintCount/TotNbofEvents << G4endl;
-    if (fScintCount > 0) {
-      G4cout << " Average energy: " << (fScintEnergy/eV)/fScintCount << " eV."
-             << G4endl;
-    }
-  }
-  G4cout << "Average number of OpRayleigh per event:   "
-         << fRayleighCount/TotNbofEvents << G4endl;
-  G4cout << "Average number of OpAbsorption per event: "
-         << fOpAbsorption/TotNbofEvents << G4endl;
-  G4cout << 
-    "\nSurface events (on +X surface, maximum one per photon) this run:" 
-         << G4endl;
-  G4cout << "# of primary particles:      " << std::setw(8) << TotNbofEvents
-         << G4endl;
-  G4cout << "OpAbsorption before surface: " << std::setw(8)
-         << fOpAbsorptionPrior << G4endl;
-  G4cout << "Total # of surface events:   " << std::setw(8) << fTotalSurface
-         << G4endl;
-  if (fParticle->GetParticleName() == "opticalphoton") {
-    G4cout << "Unaccounted for:             " << std::setw(8)
-         << fTotalSurface + fOpAbsorptionPrior - TotNbofEvents << G4endl;
-  }
-  G4cout << "\nSurface events by process:" << G4endl;
-  if (fBoundaryProcs[Transmission] > 0) {
-    G4cout << "  Transmission:              " << std::setw(8)
-           << fBoundaryProcs[Transmission] << G4endl;
-  }
-  if (fBoundaryProcs[FresnelRefraction] > 0) {
-    G4cout << "  Fresnel refraction:        " << std::setw(8)
-           << fBoundaryProcs[FresnelRefraction] << G4endl;
-  }
-  if (fBoundaryProcs[FresnelReflection] > 0) {
-    G4cout << "  Fresnel reflection:        " << std::setw(8)
-           << fBoundaryProcs[FresnelReflection] << G4endl; 
-  }
-  if (fBoundaryProcs[TotalInternalReflection] > 0) {
-    G4cout << "  Total internal reflection: " << std::setw(8)
-           << fBoundaryProcs[TotalInternalReflection] << G4endl;
-  }
-  if (fBoundaryProcs[LambertianReflection] > 0) {
-    G4cout << "  Lambertian reflection:     " << std::setw(8)
-           << fBoundaryProcs[LambertianReflection] << G4endl;
-  }
-  if (fBoundaryProcs[LobeReflection] > 0) {
-    G4cout << "  Lobe reflection:           " << std::setw(8)
-           << fBoundaryProcs[LobeReflection] << G4endl;
-  }
-  if (fBoundaryProcs[SpikeReflection] > 0) {
-    G4cout << "  Spike reflection:          " << std::setw(8)
-           << fBoundaryProcs[SpikeReflection] << G4endl;
-  }
-  if (fBoundaryProcs[BackScattering] > 0) {
-    G4cout << "  Backscattering:            " << std::setw(8)
-           << fBoundaryProcs[BackScattering] << G4endl;
-  }
-  if (fBoundaryProcs[Absorption] > 0) {
-    G4cout << "  Absorption:                " << std::setw(8)
-           << fBoundaryProcs[Absorption] << G4endl;
-  }
-  if (fBoundaryProcs[Detection] > 0) {
-    G4cout << "  Detection:                 " << std::setw(8)
-           << fBoundaryProcs[Detection] << G4endl;
-  }
-  if (fBoundaryProcs[NotAtBoundary] > 0) {
-    G4cout << "  Not at boundary:           " << std::setw(8)
-           << fBoundaryProcs[NotAtBoundary] << G4endl;
-  }
-  if (fBoundaryProcs[SameMaterial] > 0) {
-    G4cout << "  Same material:             " << std::setw(8)
-           << fBoundaryProcs[SameMaterial] << G4endl;
-  }
-  if (fBoundaryProcs[StepTooSmall] > 0) {
-    G4cout << "  Step too small:            " << std::setw(8)
-           << fBoundaryProcs[StepTooSmall] << G4endl;
-  }
-  if (fBoundaryProcs[NoRINDEX] > 0) {
-    G4cout << "  No RINDEX:                 " << std::setw(8)
-           << fBoundaryProcs[NoRINDEX] << G4endl;
-  }
-  // LBNL polished
-  if (fBoundaryProcs[PolishedLumirrorAirReflection] > 0) {
-    G4cout << "  Polished Lumirror Air reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedLumirrorAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedLumirrorGlueReflection] > 0) {
-    G4cout << "  Polished Lumirror Glue reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedLumirrorGlueReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedAirReflection] > 0) {
-    G4cout << "  Polished Air reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedTeflonAirReflection] > 0) {
-    G4cout << "  Polished Teflon Air reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedTeflonAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedTiOAirReflection] > 0) {
-    G4cout << "  Polished TiO Air reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedTiOAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedTyvekAirReflection] > 0) {
-    G4cout << "  Polished Tyvek Air reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedTyvekAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedVM2000AirReflection] > 0) {
-    G4cout << "  Polished VM2000 Air reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedVM2000AirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[PolishedVM2000GlueReflection] > 0) {
-    G4cout << "  Polished VM2000 Glue reflection: " << std::setw(8)
-           << fBoundaryProcs[PolishedVM2000GlueReflection] << G4endl;
-  }
-  // LBNL etched
-  if (fBoundaryProcs[EtchedLumirrorAirReflection] > 0) {
-    G4cout << "  Etched Lumirror Air reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedLumirrorAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedLumirrorGlueReflection] > 0) {
-    G4cout << "  Etched Lumirror Glue reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedLumirrorGlueReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedAirReflection] > 0) {
-    G4cout << "  Etched Air reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedTeflonAirReflection] > 0) {
-    G4cout << "  Etched Teflon Air reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedTeflonAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedTiOAirReflection] > 0) {
-    G4cout << "  Etched TiO Air reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedTiOAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedTyvekAirReflection] > 0) {
-    G4cout << "  Etched Tyvek Air reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedTyvekAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedVM2000AirReflection] > 0) {
-    G4cout << "  Etched VM2000 Air reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedVM2000AirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[EtchedVM2000GlueReflection] > 0) {
-    G4cout << "  Etched VM2000 Glue reflection: " << std::setw(8)
-           << fBoundaryProcs[EtchedVM2000GlueReflection] << G4endl;
-  }
-  // LBNL ground
-  if (fBoundaryProcs[GroundLumirrorAirReflection] > 0) {
-    G4cout << "  Ground Lumirror Air reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundLumirrorAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundLumirrorGlueReflection] > 0) {
-    G4cout << "  Ground Lumirror Glue reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundLumirrorGlueReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundAirReflection] > 0) {
-    G4cout << "  Ground Air reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundTeflonAirReflection] > 0) {
-    G4cout << "  Ground Teflon Air reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundTeflonAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundTiOAirReflection] > 0) {
-    G4cout << "  Ground TiO Air reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundTiOAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundTyvekAirReflection] > 0) {
-    G4cout << "  Ground Tyvek Air reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundTyvekAirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundVM2000AirReflection] > 0) {
-    G4cout << "  Ground VM2000 Air reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundVM2000AirReflection] << G4endl;
-  }
-  if (fBoundaryProcs[GroundVM2000GlueReflection] > 0) {
-    G4cout << "  Ground VM2000 Glue reflection: " << std::setw(8)
-           << fBoundaryProcs[GroundVM2000GlueReflection] << G4endl;
-  }
+	if( totEvents == 0 )	//	if there are no events
+		return;	//	do nothing
 
-  G4int sum = std::accumulate(fBoundaryProcs.begin(), fBoundaryProcs.end(), 0);
-  G4cout << " Sum:                        " << std::setw(8) << sum << G4endl;
-  G4cout << " Unaccounted for:            " << std::setw(8)
-         << fTotalSurface - sum << G4endl;
+	const MyDetectorConstruction *det = (const MyDetectorConstruction *)( G4RunManager::GetRunManager()->GetUserDetectorConstruction() );	//	fetch detector
+	std::ios::fmtflags mode = G4cout.flags();	//	fetch cout specialities
 
-  G4cout <<   "---------------------------------\n";
+	G4cout << fParticle->GetParticleName() << " with energy " << G4BestUnit( fEk, "Energy" ) << " summary:" << G4endl;	//	header for user info
+	G4cout << "Volume material:\t" << det->GetWorldMat()->GetName() << G4endl;	//	inform user of entire detector material
+	G4cout << "Scintillator material:\t" << det->GetCrystalMat()->GetName() << G4endl;	//	inform user of scintillating crystal material
+	G4cout << "# of primary particles (surface events):\t" << std::setw( 8 ) << totEvents << G4endl;	//	number of primary photons
+	G4cout << "Average number of Rayleigh scattering per event:\t" << fRayleighN / totEvents << G4endl;	//	output rayleigh scattering information
+	G4cout << "Average number of Absorption per event:\t" << fOpAbs / totEvents << G4endl;	//	output absorption information
+	G4cout << "Absorption before surface:\t" << std::setw( 8 ) << fOpAbsPrior << G4endl;	//	output absorption before reaching surface
+	G4cout << "Total # of surface events:\t" << std::setw( 8 ) << fTotSurf << G4endl;	//	total events at surface
+	G4cout << "Sum:\t" << std::setw( 8 ) << sum << G4endl;	//	output sum of events
+	G4cout << "Unaccounted for:\t" << std::setw( 8 ) << fTotSurf - sum << G4endl;	//	output untracked total events
+	G4cout.setf( mode, std::ios::floatfield );	//	set flags
+	G4cout.precision( prec );	//	set precision
 
-  G4cout.setf(mode, std::ios::floatfield);
-  G4cout.precision(prec);
-}
+	if( fParticle->GetParticleName() == "opticalphoton" )	//	for optical photons
+		G4cout << "Unaccounted for:\t" << std::setw( 8 ) << fTotSurf + fOpAbsPrior - totEvents << G4endl;	//	output number not tracked to end
+
+	G4cout << "\nSurf events by process:" << G4endl;	//	output surface events
+
+	//	for a variety of surface events...
+	if( fBoundaryProcs[Absorption] > 0 )
+		G4cout << "\tAbsorption:\t" << std::setw( 8 ) << fBoundaryProcs[Absorption] << G4endl;
+	if( fBoundaryProcs[BackScattering] > 0 )
+		G4cout << "\tBackscattering:\t" << std::setw( 8 ) << fBoundaryProcs[BackScattering] << G4endl;
+	if( fBoundaryProcs[Detection] > 0 )
+		G4cout << "\tDetection:\t" << std::setw( 8 ) << fBoundaryProcs[Detection] << G4endl;
+	if( fBoundaryProcs[EtchedAirReflection] > 0 )
+		G4cout << "\tEtched Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedAirReflection] << G4endl;
+	if( fBoundaryProcs[EtchedLumirrorAirReflection] > 0 )
+		G4cout << "\tEtched Lumirror Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedLumirrorAirReflection] << G4endl;
+	if( fBoundaryProcs[EtchedLumirrorGlueReflection] > 0 )
+		G4cout << "\tEtched Lumirror Glue reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedLumirrorGlueReflection] << G4endl;
+	if( fBoundaryProcs[EtchedTeflonAirReflection] > 0 )
+		G4cout << "\tEtched Teflon Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedTeflonAirReflection] << G4endl;
+	if( fBoundaryProcs[EtchedTiOAirReflection] > 0 )
+		G4cout << "\tEtched TiO Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedTiOAirReflection] << G4endl;
+	if( fBoundaryProcs[EtchedTyvekAirReflection] > 0 )
+		G4cout << "\tEtched Tyvek Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedTyvekAirReflection] << G4endl;
+	if( fBoundaryProcs[EtchedVM2000AirReflection] > 0 )
+		G4cout << "\tEtched VM2000 Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedVM2000AirReflection] << G4endl;
+	if( fBoundaryProcs[EtchedVM2000GlueReflection] > 0 )
+		G4cout << "\tEtched VM2000 Glue reflection:\t" << std::setw( 8 ) << fBoundaryProcs[EtchedVM2000GlueReflection] << G4endl;
+	if( fBoundaryProcs[FresnelReflection] > 0 )
+		G4cout << "\tFresnel reflection:\t" << std::setw( 8 ) << fBoundaryProcs[FresnelReflection] << G4endl;
+	if( fBoundaryProcs[FresnelRefraction] > 0 )
+		G4cout << "\tFresnel refraction:\t" << std::setw( 8 ) << fBoundaryProcs[FresnelRefraction] << G4endl;
+	if( fBoundaryProcs[GroundAirReflection] > 0 )
+		G4cout << "\tGround Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundAirReflection] << G4endl;
+	if( fBoundaryProcs[GroundLumirrorAirReflection] > 0 )
+		G4cout << "\tGround Lumirror Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundLumirrorAirReflection] << G4endl;
+	if( fBoundaryProcs[GroundLumirrorGlueReflection] > 0 )
+		G4cout << "\tGround Lumirror Glue reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundLumirrorGlueReflection] << G4endl;
+	if( fBoundaryProcs[GroundTeflonAirReflection] > 0 )
+		G4cout << "\tGround Teflon Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundTeflonAirReflection] << G4endl;
+	if( fBoundaryProcs[GroundTiOAirReflection] > 0 )
+		G4cout << "\tGround TiO Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundTiOAirReflection] << G4endl;
+	if( fBoundaryProcs[GroundTyvekAirReflection] > 0 )
+		G4cout << "\tGround Tyvek Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundTyvekAirReflection] << G4endl;
+	if( fBoundaryProcs[GroundVM2000AirReflection] > 0 )
+		G4cout << "\tGround VM2000 Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundVM2000AirReflection] << G4endl;
+	if( fBoundaryProcs[GroundVM2000GlueReflection] > 0 )
+		G4cout << "\tGround VM2000 Glue reflection:\t" << std::setw( 8 ) << fBoundaryProcs[GroundVM2000GlueReflection] << G4endl;
+	if( fBoundaryProcs[LambertianReflection] > 0 )
+		G4cout << "\tLambertian reflection:\t" << std::setw( 8 ) << fBoundaryProcs[LambertianReflection] << G4endl;
+	if( fBoundaryProcs[LobeReflection] > 0 )
+		G4cout << "\tLobe reflection:\t" << std::setw( 8 ) << fBoundaryProcs[LobeReflection] << G4endl;
+	if( fBoundaryProcs[NoRINDEX] > 0 )
+		G4cout << "\tNo RINDEX:\t" << std::setw( 8 ) << fBoundaryProcs[NoRINDEX] << G4endl;
+	if( fBoundaryProcs[NotAtBoundary] > 0 )
+		G4cout << "\tNot at boundary:\t" << std::setw( 8 ) << fBoundaryProcs[NotAtBoundary] << G4endl;
+	if( fBoundaryProcs[PolishedAirReflection] > 0 )
+		G4cout << "\tPolished Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedAirReflection] << G4endl;
+	if( fBoundaryProcs[PolishedLumirrorAirReflection] > 0 )
+		G4cout << "\tPolished Lumirror Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedLumirrorAirReflection] << G4endl;
+	if( fBoundaryProcs[PolishedLumirrorGlueReflection] > 0 )
+		G4cout << "\tPolished Lumirror Glue reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedLumirrorGlueReflection] << G4endl;
+	if( fBoundaryProcs[PolishedTeflonAirReflection] > 0 )
+		G4cout << "\tPolished Teflon Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedTeflonAirReflection] << G4endl;
+	if( fBoundaryProcs[PolishedTiOAirReflection] > 0 )
+		G4cout << "\tPolished TiO Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedTiOAirReflection] << G4endl;
+	if( fBoundaryProcs[PolishedTyvekAirReflection] > 0 )
+		G4cout << "\tPolished Tyvek Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedTyvekAirReflection] << G4endl;
+	if( fBoundaryProcs[PolishedVM2000AirReflection] > 0 )
+		G4cout << "\tPolished VM2000 Air reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedVM2000AirReflection] << G4endl;
+	if( fBoundaryProcs[PolishedVM2000GlueReflection] > 0 )
+		G4cout << "\tPolished VM2000 Glue reflection:\t" << std::setw( 8 ) << fBoundaryProcs[PolishedVM2000GlueReflection] << G4endl;
+	if( fBoundaryProcs[SameMaterial] > 0 )
+		G4cout << "\tSame material:\t" << std::setw( 8 ) << fBoundaryProcs[SameMaterial] << G4endl;
+	if( fBoundaryProcs[SpikeReflection] > 0 )
+		G4cout << "\tSpike reflection:\t" << std::setw( 8 ) << fBoundaryProcs[SpikeReflection] << G4endl;
+	if( fBoundaryProcs[StepTooSmall] > 0 )
+		G4cout << "\tStep too small:\t" << std::setw( 8 ) << fBoundaryProcs[StepTooSmall] << G4endl;
+	if( fBoundaryProcs[TotalInternalReflection] > 0 )
+		G4cout << "\tTotal internal reflection:\t" << std::setw( 8 ) << fBoundaryProcs[TotalInternalReflection] << G4endl;
+	if( fBoundaryProcs[Transmission] > 0 )
+		G4cout << "\tTransmission:\t" << std::setw( 8 ) << fBoundaryProcs[Transmission] << G4endl;
+	//	...	inform user
+
+}	//	end EndOfRun()

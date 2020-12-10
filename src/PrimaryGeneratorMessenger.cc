@@ -1,84 +1,43 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-/// \file optical/OpNovice2/src/PrimaryGeneratorMessenger.cc
-/// \brief Implementation of the PrimaryGeneratorMessenger class
-//
-//
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 #include "PrimaryGeneratorMessenger.hh"
 
-#include "PrimaryGeneratorAction.hh"
-#include "G4UIdirectory.hh"
-#include "G4UIcmdWithADoubleAndUnit.hh"
-#include "G4SystemOfUnits.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+PrimaryGeneratorMessenger::PrimaryGeneratorMessenger( PrimaryGeneratorAction *Gun ): G4UImessenger(), fPrimaryAction( Gun ){
 
-PrimaryGeneratorMessenger::
-  PrimaryGeneratorMessenger(PrimaryGeneratorAction* Gun)
-  : G4UImessenger(),
-    fPrimaryAction(Gun)
-{
-  fGunDir = new G4UIdirectory("/opnovice2/gun/");
-  fGunDir->SetGuidance("PrimaryGenerator control");
+	fGunDir = new G4UIdirectory( "/n4s/gun/" );	//	set gun prefix
+	fGunDir->SetGuidance( "PrimaryGenerator control" );	//	inform user
+	fPolarCmd = new G4UIcmdWithADoubleAndUnit( "/n4s/gun/optPhotonPolar", this );	//	set polarisation amount command
+	fPolarCmd->SetGuidance( "Set linear polarization angle w.r.t. (k,n) plane" );	//	inform user
+	fPolarCmd->SetParameterName( "angle", true );	//	set angle to be available
+	fPolarCmd->SetUnitCategory( "Angle" );	//	set unit to correct category
+	fPolarCmd->SetDefaultValue( -360.0 );	//	initialise angle
+	fPolarCmd->SetDefaultUnit( "deg" );	//	set angle to be in degrees by default
+	fPolarCmd->AvailableForStates( G4State_Idle );	//	only allow modification outside of active tracking
 
-  fPolarCmd =
-           new G4UIcmdWithADoubleAndUnit("/opnovice2/gun/optPhotonPolar",this);
-  fPolarCmd->SetGuidance("Set linear polarization");
-  fPolarCmd->SetGuidance("  angle w.r.t. (k,n) plane");
-  fPolarCmd->SetParameterName("angle",true);
-  fPolarCmd->SetUnitCategory("Angle");
-  fPolarCmd->SetDefaultValue(-360.0);
-  fPolarCmd->SetDefaultUnit("deg");
-  fPolarCmd->AvailableForStates(G4State_Idle);
-}
+}	//	end default constructor( PrimaryGeneratorAction* )
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-PrimaryGeneratorMessenger::~PrimaryGeneratorMessenger()
-{
-  delete fPolarCmd;
-  delete fGunDir;
-}
+PrimaryGeneratorMessenger::~PrimaryGeneratorMessenger(){	//	clean up commands
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+	delete fPolarCmd;
+	delete fGunDir;
 
-void PrimaryGeneratorMessenger::SetNewValue(
-                                        G4UIcommand* command, G4String newValue)
-{
-  if (command == fPolarCmd) {
-      G4double angle = fPolarCmd->GetNewDoubleValue(newValue);
-      if (angle == -360.0*deg) {
-         fPrimaryAction->SetOptPhotonPolar();
-      } else {
-         fPrimaryAction->SetOptPhotonPolar(angle);
-      }
-  }
-}
+}	//	end default destructor
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void PrimaryGeneratorMessenger::SetNewValue( G4UIcommand *command, G4String newValue ){
+
+	if( command == fPolarCmd ){	//	if sent a polarisation command
+
+		G4double angle = fPolarCmd->GetNewDoubleValue( newValue );	//	Create new value for angle
+
+		if( angle == -360.0 * deg )	//	if angle is not real
+			fPrimaryAction->SetOptPhotonPolar();	//	create an angle
+		else	//	otherwise if angle is physical
+			fPrimaryAction->SetOptPhotonPolar( angle );	//	update polarisation
+
+	}	//	end polarisation command check
+
+}	//	end SetNewValue( G4UIcommand*, G4String )

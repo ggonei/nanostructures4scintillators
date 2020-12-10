@@ -1,329 +1,168 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-//
-/// \file optical/OpNovice2/src/SteppingAction.cc
-/// \brief Implementation of the SteppingAction class
-//
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 #include "SteppingAction.hh"
-//#include "EventAction.hh"
-#include "HistoManager.hh"
-#include "TrackInformation.hh"
-#include "Run.hh"
 
-#include "G4Cerenkov.hh"
-#include "G4Scintillation.hh"
-#include "G4OpBoundaryProcess.hh"
+void SteppingAction::UserSteppingAction( const G4Step *step ){	//	create action executed every step
 
-#include "G4Step.hh"
-#include "G4Track.hh"
-#include "G4OpticalPhoton.hh"
-#include "G4Event.hh"
-#include "G4EventManager.hh"
-#include "G4SteppingManager.hh"
-#include "G4RunManager.hh"
-#include "G4ProcessManager.hh"
+	G4AnalysisManager *analysisMan = G4AnalysisManager::Instance();	//	fetch this instance
+	Run *run = static_cast<Run *>( G4RunManager::GetRunManager()->GetNonConstCurrentRun() );	//	fetch this run
+	G4StepPoint *endPoint = step->GetPostStepPoint();	//	get end of step
+	G4StepPoint *startPoint = step->GetPreStepPoint();	//	get start of step
+	G4Track *track = step->GetTrack();	//	get particle track
+	G4String particleName = track->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();	//	get particle name
+	TrackInformation *trackInfo = (TrackInformation *)( track->GetUserInformation() );	//	get track information
+	G4int whichH = 3;	//	momentum histogram switcher
 
-#include "G4SystemOfUnits.hh"
+	if( particleName == "opticalphoton" ){	//	all should be optical photons for now
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-SteppingAction::SteppingAction()
-: G4UserSteppingAction(),
-  fVerbose(0)
-{}
+		const G4VProcess *pds = endPoint->GetProcessDefinedStep();	//	get process of step
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-SteppingAction::~SteppingAction()
-{}
+		if( pds->GetProcessName() == "OpAbsorption" ){	//	if our particle was absorbed
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void SteppingAction::UserSteppingAction(const G4Step* step)
-{
-  static G4ParticleDefinition* opticalphoton = 
-              G4OpticalPhoton::OpticalPhotonDefinition();
-  G4AnalysisManager* analysisMan = G4AnalysisManager::Instance();
-  Run* run = static_cast<Run*>(
-               G4RunManager::GetRunManager()->GetNonConstCurrentRun());
+			run->AddOpAbsorption();	//	increment absorption counter
 
-  G4Track* track = step->GetTrack();
-  G4StepPoint* endPoint   = step->GetPostStepPoint();
-  G4StepPoint* startPoint = step->GetPreStepPoint();
+			if( trackInfo->GetIsFirstCrystalX() )	//	check if particle is in first crystal
+				run->AddOpAbsorptionPrior();	//	increment absorption prior to edge counter
 
-  G4String particleName = track->GetDynamicParticle()->
-                                 GetParticleDefinition()->GetParticleName();
+		} else if( pds->GetProcessName() == "OpRayleigh" )	//	 if our particle rayleigh scattered
+			run->AddRayleigh();	//	increment rayleigh counter
 
-  TrackInformation* trackInfo = 
-                        (TrackInformation*)(track->GetUserInformation());
+		if( endPoint->GetStepStatus() == fGeomBoundary ){	//	if particle has scattered to boundary
 
-  if (particleName == "opticalphoton") {
-    const G4VProcess* pds = endPoint->GetProcessDefinedStep();
-    if (pds->GetProcessName() == "OpAbsorption") {
-      run->AddOpAbsorption(); 
-      if (trackInfo->GetIsFirstTankX()) {
-        run->AddOpAbsorptionPrior();
-      }
-    } 
-    else if (pds->GetProcessName() == "OpRayleigh") {
-      run->AddRayleigh();
-    }
+			const G4DynamicParticle *theParticle = track->GetDynamicParticle();	//	fetch particle
+			G4ThreeVector oldMomentumDir = theParticle->GetMomentumDirection();	//	fetch previous direction
+			G4ThreeVector m0 = startPoint->GetMomentumDirection();	//	fetch starting momentum direction
+			G4ThreeVector m1 = endPoint->GetMomentumDirection();	//	fetch ending momentum direction
+			G4OpBoundaryProcessStatus thisState = Undefined;	//	initialise status
+			G4ProcessManager *OpManager = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();	//	fetch optical photon
+			G4int loopMax = OpManager->GetPostStepProcessVector()->entries();	//	maximum number of steps to loop over
+			G4ProcessVector *postStepDoItVector = OpManager->GetPostStepProcessVector( typeDoIt );	//	process vector at end of steps
 
-    // optical process has endpt on bdry, 
-    if (endPoint->GetStepStatus() == fGeomBoundary) {
+			if( trackInfo->GetIsFirstCrystalX() ){	//	if we are in the first crystal
 
-      const G4DynamicParticle* theParticle = track->GetDynamicParticle();
+				G4ThreeVector momdir = endPoint->GetMomentumDirection();	//	fetch momentum now
+				G4double px1 = momdir.x();	//	momentum x
+				G4double py1 = momdir.y();	//	momentum y
+				G4double pz1 = momdir.z();	//	momentum z
 
-      G4ThreeVector oldMomentumDir = theParticle->GetMomentumDirection();
+				if( px1 < 0 )	//	if we have negative momentum
+					whichH = 0;	//	fill in the correct histogram
 
-      G4ThreeVector m0 = startPoint->GetMomentumDirection();
-      G4ThreeVector m1 = endPoint->GetMomentumDirection();
+				analysisMan->FillH1( 4 + whichH, px1 );	//	fill momentum x histogram
+				analysisMan->FillH1( 5 + whichH, py1 );	//	fill momentum y histogram
+				analysisMan->FillH1( 6 + whichH, pz1 );	//	fill momentum z histogram
+				trackInfo->SetIsFirstCrystalX( false );	//	set flag so we do not fill again
+				run->AddTotalSurf();	//	increment surface
 
-      G4OpBoundaryProcessStatus theStatus = Undefined;
+				for( G4int i = 0; i < loopMax; ++i ){	//	loop over track parts
 
-      G4ProcessManager* OpManager = 
-        G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
-      G4int MAXofPostStepLoops = 
-        OpManager->GetPostStepProcessVector()->entries();
-      G4ProcessVector* postStepDoItVector = 
-        OpManager->GetPostStepProcessVector(typeDoIt);
+					G4VProcess *currentProcess = ( *postStepDoItVector )[i];	//	fetch process from step
+					G4OpBoundaryProcess *opProc = dynamic_cast<G4OpBoundaryProcess *>( currentProcess );	//	fetch boundary process
 
-      if (trackInfo->GetIsFirstTankX()) {
-        G4ThreeVector momdir = endPoint->GetMomentumDirection();
-        G4double px1 = momdir.x();
-        G4double py1 = momdir.y();
-        G4double pz1 = momdir.z();
-        if (px1 < 0.) {
-          analysisMan->FillH1(4, px1);
-          analysisMan->FillH1(5, py1);
-          analysisMan->FillH1(6, pz1);
-        } else if (px1 >= 0.) {
-          analysisMan->FillH1(7, px1);
-          analysisMan->FillH1(8, py1);
-          analysisMan->FillH1(9, pz1);
-        }
+					if( opProc ){	//	if we have a boundary process
 
-        trackInfo->SetIsFirstTankX(false);
-        run->AddTotalSurface(); 
+						thisState = opProc->GetStatus();	//	get state of particle
+						analysisMan->FillH1( 3, thisState );	//	fill histogram
 
-        for (G4int i=0; i<MAXofPostStepLoops; ++i) {
-          G4VProcess* currentProcess = (*postStepDoItVector)[i];
+						if( thisState == Transmission )	//	if transmission event
+							run->AddTransmission();	//	increment transmission count
 
-          G4OpBoundaryProcess* opProc = 
-            dynamic_cast<G4OpBoundaryProcess*>(currentProcess);
-          if (opProc) {
-            theStatus = opProc->GetStatus();
-            analysisMan->FillH1(3, theStatus);
-            if (theStatus == Transmission) {
-              run->AddTransmission();
-            }
-            else if (theStatus == FresnelRefraction) {
-              run->AddFresnelRefraction(); 
-              analysisMan->FillH1(10, px1);
-              analysisMan->FillH1(11, py1);
-              analysisMan->FillH1(12, pz1);
-            }
-            else if (theStatus == FresnelReflection) { 
-              run->AddFresnelReflection(); 
-            }
-            else if (theStatus == TotalInternalReflection) { 
-              run->AddTotalInternalReflection();
-            }
-            else if (theStatus == LambertianReflection) {
-              run->AddLambertianReflection();
-            }
-            else if (theStatus == LobeReflection) {
-              run->AddLobeReflection();
-            }
-            else if (theStatus == SpikeReflection) {
-              run->AddSpikeReflection();
-            }
-            else if (theStatus == BackScattering) {
-              run->AddBackScattering();
-            }
-            else if (theStatus == Absorption) {
-              run->AddAbsorption();
-            }
-            else if (theStatus == Detection) {
-              run->AddDetection();
-            }
-            else if (theStatus == NotAtBoundary) {
-              run->AddNotAtBoundary();
-            }
-            else if (theStatus == SameMaterial) {
-              run->AddSameMaterial();
-            }
-            else if (theStatus == StepTooSmall) {
-              run->AddStepTooSmall();
-            }
-            else if (theStatus == NoRINDEX) {
-              run->AddNoRINDEX();
-            }
-            else if (theStatus == PolishedLumirrorAirReflection) {
-              run->AddPolishedLumirrorAirReflection();
-            }
-            else if (theStatus == PolishedLumirrorGlueReflection) {
-              run->AddPolishedLumirrorGlueReflection();
-            }
-            else if (theStatus == PolishedAirReflection) {
-              run->AddPolishedAirReflection();
-            }
-            else if (theStatus == PolishedTeflonAirReflection) {
-              run->AddPolishedTeflonAirReflection();
-            }
-            else if (theStatus == PolishedTiOAirReflection) {
-              run->AddPolishedTiOAirReflection();
-            }
-            else if (theStatus == PolishedTyvekAirReflection) {
-              run->AddPolishedTyvekAirReflection();
-            }
-            else if (theStatus == PolishedVM2000AirReflection) {
-              run->AddPolishedVM2000AirReflection();
-            }
-            else if (theStatus == PolishedVM2000GlueReflection) {
-              run->AddPolishedVM2000AirReflection();
-            }
-            else if (theStatus == EtchedLumirrorAirReflection) {
-              run->AddEtchedLumirrorAirReflection();
-            }
-            else if (theStatus == EtchedLumirrorGlueReflection) {
-              run->AddEtchedLumirrorGlueReflection();
-            }
-            else if (theStatus == EtchedAirReflection) {
-              run->AddEtchedAirReflection();
-            }
-            else if (theStatus == EtchedTeflonAirReflection) {
-              run->AddEtchedTeflonAirReflection();
-            }
-            else if (theStatus == EtchedTiOAirReflection) {
-              run->AddEtchedTiOAirReflection();
-            }
-            else if (theStatus == EtchedTyvekAirReflection) {
-              run->AddEtchedTyvekAirReflection();
-            }
-            else if (theStatus == EtchedVM2000AirReflection) {
-              run->AddEtchedVM2000AirReflection();
-            }
-            else if (theStatus == EtchedVM2000GlueReflection) {
-              run->AddEtchedVM2000AirReflection();
-            }
-            else if (theStatus == GroundLumirrorAirReflection) {
-              run->AddGroundLumirrorAirReflection();
-            }
-            else if (theStatus == GroundLumirrorGlueReflection) {
-              run->AddGroundLumirrorGlueReflection();
-            }
-            else if (theStatus == GroundAirReflection) {
-              run->AddGroundAirReflection();
-            }
-            else if (theStatus == GroundTeflonAirReflection) {
-              run->AddGroundTeflonAirReflection();
-            }
-            else if (theStatus == GroundTiOAirReflection) {
-              run->AddGroundTiOAirReflection();
-            }
-            else if (theStatus == GroundTyvekAirReflection) {
-              run->AddGroundTyvekAirReflection();
-            }
-            else if (theStatus == GroundVM2000AirReflection) {
-              run->AddGroundVM2000AirReflection();
-            }
-            else if (theStatus == GroundVM2000GlueReflection) {
-              run->AddGroundVM2000AirReflection();
-            }
-            else if (theStatus == Dichroic) {
-              run->AddDichroic();
-            }
-            
-            else {
-              G4cout << "theStatus: " << theStatus 
-                     << " was none of the above." << G4endl;
-            }
+						else if( thisState == FresnelRefraction ){	//	if fresnel refraction
 
-          }
-        }
-      }
-    }
-  }
+							run->AddFresnelRefraction();	//	increment counter
+							analysisMan->FillH1( 10, px1 );	//	fill momentum x refracted histogram
+							analysisMan->FillH1( 11, py1 );	//	fill momentum y refracted histogram
+							analysisMan->FillH1( 12, pz1 );	//	fill momentum z refracted histogram
 
-  else { // particle != opticalphoton
-    // print how many Cerenkov and scint photons produced this step
-    // this demonstrates use of GetNumPhotons()
-    auto proc_man = track->GetDynamicParticle()->GetParticleDefinition()
-                         ->GetProcessManager();
-    G4int n_proc = proc_man->GetPostStepProcessVector()->entries();
-    G4ProcessVector* proc_vec = proc_man->GetPostStepProcessVector(typeDoIt);
+						}	//	end fresnel refraction check
+						//	for a variety of surface events...
+						else if( thisState == Absorption )
+							run->AddAbsorption();
+						else if( thisState == BackScattering )
+							run->AddBackScattering();
+						else if( thisState == Detection )
+							run->AddDetection();
+						else if( thisState == Dichroic )
+							run->AddDichroic();
+						else if( thisState == EtchedAirReflection )
+							run->AddEtchedAirReflection();
+						else if( thisState == EtchedLumirrorAirReflection )
+							run->AddEtchedLumirrorAirReflection();
+						else if( thisState == EtchedLumirrorGlueReflection )
+							run->AddEtchedLumirrorGlueReflection();
+						else if( thisState == EtchedTeflonAirReflection )
+							run->AddEtchedTeflonAirReflection();
+						else if( thisState == EtchedTiOAirReflection )
+							run->AddEtchedTiOAirReflection();
+						else if( thisState == EtchedTyvekAirReflection )
+							run->AddEtchedTyvekAirReflection();
+						else if( thisState == EtchedVM2000AirReflection )
+							run->AddEtchedVM2000AirReflection();
+						else if( thisState == EtchedVM2000GlueReflection )
+							run->AddEtchedVM2000AirReflection();
+						else if( thisState == FresnelReflection )
+							run->AddFresnelReflection();
+						else if( thisState == GroundAirReflection )
+							run->AddGroundAirReflection();
+						else if( thisState == GroundLumirrorAirReflection )
+							run->AddGroundLumirrorAirReflection();
+						else if( thisState == GroundLumirrorGlueReflection )
+							run->AddGroundLumirrorGlueReflection();
+						else if( thisState == GroundTeflonAirReflection )
+							run->AddGroundTeflonAirReflection();
+						else if( thisState == GroundTiOAirReflection )
+							run->AddGroundTiOAirReflection();
+						else if( thisState == GroundTyvekAirReflection )
+							run->AddGroundTyvekAirReflection();
+						else if( thisState == GroundVM2000AirReflection )
+							run->AddGroundVM2000AirReflection();
+						else if( thisState == GroundVM2000GlueReflection )
+							run->AddGroundVM2000AirReflection();
+						else if( thisState == LambertianReflection )
+							run->AddLambertianReflection();
+						else if( thisState == LobeReflection )
+							run->AddLobeReflection();
+						else if( thisState == NoRINDEX )
+							run->AddNoRINDEX();
+						else if( thisState == NotAtBoundary )
+							run->AddNotAtBoundary();
+						else if( thisState == PolishedAirReflection )
+							run->AddPolishedAirReflection();
+						else if( thisState == PolishedLumirrorAirReflection )
+							run->AddPolishedLumirrorAirReflection();
+						else if( thisState == PolishedLumirrorGlueReflection )
+							run->AddPolishedLumirrorGlueReflection();
+						else if( thisState == PolishedTeflonAirReflection )
+							run->AddPolishedTeflonAirReflection();
+						else if( thisState == PolishedTiOAirReflection )
+							run->AddPolishedTiOAirReflection();
+						else if( thisState == PolishedTyvekAirReflection )
+							run->AddPolishedTyvekAirReflection();
+						else if( thisState == PolishedVM2000AirReflection )
+							run->AddPolishedVM2000AirReflection();
+						else if( thisState == PolishedVM2000GlueReflection )
+							run->AddPolishedVM2000AirReflection();
+						else if( thisState == SameMaterial )
+							run->AddSameMaterial();
+						else if( thisState == SpikeReflection )
+							run->AddSpikeReflection();
+						else if( thisState == StepTooSmall )
+							run->AddStepTooSmall();
+						else if( thisState == TotalInternalReflection )
+							run->AddTotalInternalReflection();
+						//	...increment the right counter
+						else	//	something is not right...
+							G4cout << "***Unknown Action***" << G4endl;	//	let user know
 
-    G4int n_scint = 0;
-    G4int n_cer   = 0;
-    for (G4int i = 0; i < n_proc; ++i) {
-      if ((*proc_vec)[i]->GetProcessName().compare("Cerenkov") == 0) {
-        auto cer = (G4Cerenkov*)(*proc_vec)[i];
-        n_cer = cer->GetNumPhotons();
-      }
-      else if ((*proc_vec)[i]->GetProcessName().compare("Scintillation") == 0) {
-        auto scint = (G4Scintillation*)(*proc_vec)[i];
-        n_scint = scint->GetNumPhotons();
-      }
-    }
-    if (fVerbose > 0) {
-      if (n_cer > 0 || n_scint > 0) {
-        G4cout << "In this step, " << n_cer
-               << " Cerenkov and " << n_scint
-               << " scintillation photons were produced." << G4endl;
-      }
-    }
+					}	//	end boundary operations
 
-    // loop over secondaries, create statistics
-    const std::vector<const G4Track*>* secondaries =
-                                step->GetSecondaryInCurrentStep();
+				}	//	end for loop over steps
 
-    for (auto sec : *secondaries) {
-      if (sec->GetDynamicParticle()->GetParticleDefinition() == opticalphoton){
-        if (sec->GetCreatorProcess()->GetProcessName().compare("Cerenkov")==0){
-          G4double en = sec->GetKineticEnergy();
-          run->AddCerenkovEnergy(en);
-          run->AddCerenkov();
-          G4AnalysisManager::Instance()->FillH1(1, en/eV);
-        }
-        else if (sec->GetCreatorProcess()
-                    ->GetProcessName().compare("Scintillation") == 0) {
-          G4double en = sec->GetKineticEnergy();
-          run->AddScintillationEnergy(en);
-          run->AddScintillation();
-          G4AnalysisManager::Instance()->FillH1(2, en/eV);
+			}	//	end first crystal check
 
-          G4double time = sec->GetGlobalTime();
-          analysisMan->FillH1(13, time/ns);
-        }
-      }
-    }
-  } 
+		}	//	end boundary check
 
-  return;
+	}	//	end optical photon check
 
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}	//	end UserSteppingAction( G4Step* )

@@ -1,116 +1,63 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-/// \file optical/OpNovice2/src/PrimaryGeneratorAction.cc
-/// \brief Implementation of the PrimaryGeneratorAction class
-//
-//
-//
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 #include "PrimaryGeneratorAction.hh"
-#include "PrimaryGeneratorMessenger.hh"
 
-#include "Randomize.hh"
 
-#include "G4Event.hh"
-#include "G4ParticleGun.hh"
-#include "G4ParticleTable.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4SystemOfUnits.hh"
+PrimaryGeneratorAction::PrimaryGeneratorAction(): G4VUserPrimaryGeneratorAction(), fParticleGun( 0 ){	//	default constructor
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+	G4int n_particle = 1;	//	number of particles
+	fParticleGun = new G4ParticleGun( n_particle );	//	create a new gun for this many particles
+	fGunMessenger = new PrimaryGeneratorMessenger( this );	//	create a corresponding messenger
+	fParticleGun->SetParticleDefinition( G4ParticleTable::GetParticleTable()->FindParticle( "e+" ) );	//	set particle type
+	fParticleGun->SetParticleTime( 0.0 * ns );	//	set initial particle time
+	fParticleGun->SetParticlePosition( G4ThreeVector( 0.0 * cm, 0.0 * cm, 0.0 * cm ) );	//	put particle at origin
+	fParticleGun->SetParticleMomentumDirection( G4ThreeVector( 1., 0., 0. ) );	//	give particle momentum-x
+	fParticleGun->SetParticleEnergy( 500.0 * keV );	//	give particle initial energy
 
-PrimaryGeneratorAction::PrimaryGeneratorAction()
- : G4VUserPrimaryGeneratorAction(), 
-   fParticleGun(0)
-{
-  G4int n_particle = 1;
-  fParticleGun = new G4ParticleGun(n_particle);
+}	//	end default constructor
 
-  //create a messenger for this class
-  fGunMessenger = new PrimaryGeneratorMessenger(this);
 
-  //default kinematic
-  //
-  G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
-  G4ParticleDefinition* particle = particleTable->FindParticle("e+");
+PrimaryGeneratorAction::~PrimaryGeneratorAction(){	//	clean up commands
 
-  fParticleGun->SetParticleDefinition(particle);
-  fParticleGun->SetParticleTime(0.0*ns);
-  fParticleGun->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*cm,0.0*cm));
-  fParticleGun->SetParticleMomentumDirection(G4ThreeVector(1.,0.,0.));
-  fParticleGun->SetParticleEnergy(500.0*keV);
-}
+	delete fParticleGun;
+	delete fGunMessenger;
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}	//	end destructor
 
-PrimaryGeneratorAction::~PrimaryGeneratorAction()
-{
-  delete fParticleGun;
-  delete fGunMessenger;
-}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void PrimaryGeneratorAction::GeneratePrimaries( G4Event *anEvent ){	//	create main particles
 
-void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
-{
-  fParticleGun->GeneratePrimaryVertex(anEvent);
-}
+	fParticleGun->GeneratePrimaryVertex( anEvent );	//	fire event
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}	//	end GeneratePrimaries( G4Event )
 
-void PrimaryGeneratorAction::SetOptPhotonPolar()
-{
- G4double angle = G4UniformRand() * 360.0*deg;
- SetOptPhotonPolar(angle);
-}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void PrimaryGeneratorAction::SetOptPhotonPolar(){	//	set polarisation of photons
 
-void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
-{
- if (fParticleGun->GetParticleDefinition()->GetParticleName()!="opticalphoton")
-   {
-     G4cout << "--> warning from PrimaryGeneratorAction::SetOptPhotonPolar() :"
-               "the particleGun is not an opticalphoton" << G4endl;
-     return;
-   }
+	G4double angle = G4UniformRand() * 360.0 * deg;	//	get a random angle
+	SetOptPhotonPolar( angle );	//	set polarisation to that angle
 
- G4ThreeVector normal (1., 0., 0.);
- G4ThreeVector kphoton = fParticleGun->GetParticleMomentumDirection();
- G4ThreeVector product = normal.cross(kphoton);
- G4double modul2       = product*product;
- 
- G4ThreeVector e_perpend (0., 0., 1.);
- if (modul2 > 0.) e_perpend = (1./std::sqrt(modul2))*product;
- G4ThreeVector e_paralle    = e_perpend.cross(kphoton);
- 
- G4ThreeVector polar = std::cos(angle)*e_paralle + std::sin(angle)*e_perpend;
- fParticleGun->SetParticlePolarization(polar);
-}
+}	//	end SetOptPhotonPolar
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void PrimaryGeneratorAction::SetOptPhotonPolar( G4double angle ){	//	add polarisation to photons
+
+	if( fParticleGun->GetParticleDefinition()->GetParticleName() != "opticalphoton" ){	//	if particle is not a photon
+
+		G4cout << "*** WARNING *** Polarising a non-photon...exiting function" << G4endl;	//	inform user
+		return;	//	exit gracefully
+
+	}	//	end particle type check
+
+	G4ThreeVector normal( 1., 0., 0. );	//	x focused vector
+	G4ThreeVector kphoton = fParticleGun->GetParticleMomentumDirection();	//	get particle momentum
+	G4ThreeVector product = normal.cross( kphoton );	//	get resultant momentum-x for photon
+	G4double modul2 = product * product;	//	remove direction
+	G4ThreeVector e_perpend( 0., 0., 1. );	//	initialise a vector
+	if( modul2 > 0. )	//	if momentum-x is positive as it should be
+		e_perpend = ( 1. / std::sqrt( modul2 ) ) * product;	//	use it to get the perpendicular vector
+	G4ThreeVector e_paralle = e_perpend.cross( kphoton );	//	get a parallel vector to our original photon
+	fParticleGun->SetParticlePolarization( std::cos( angle ) * e_paralle + std::sin( angle ) * e_perpend );	//	set particle polarisation in polar coordinates
+
+}	//	end SetOptPhotonPolar( G4double )

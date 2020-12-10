@@ -1,168 +1,180 @@
 //
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
+//	George O'Neill, University of York 2020
 //
-/// \file optical/OpNovice2/include/RunAction.hh
-/// \brief Definition of the RunAction class
+//  Make a basic cube that allows for addition of photonic objects
 //
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-
+//	This governs the bulk of the actual run
+//
 #ifndef Run_h
 #define Run_h 1
 
-#include "G4OpBoundaryProcess.hh"
-#include "G4Run.hh"
+//	std libraries
+#include <numeric>
 
-class G4ParticleDefinition;
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-class Run : public G4Run
-{
-  public:
-    Run();
-    ~Run();
-
-    void SetPrimary(G4ParticleDefinition* particle, G4double energy);
-
-    // spectrum of Cerenkov radiation
-    void AddCerenkovEnergy(G4double en) {fCerenkovEnergy += en;}
-    void AddScintillationEnergy(G4double en) {fScintEnergy += en;}
-
-    void AddCerenkov(void) {fCerenkovCount += 1;}
-    void AddScintillation(void) {fScintCount += 1;}
-    void AddRayleigh(void) {fRayleighCount += 1;}
-    
-    void AddOpAbsorption(void) {fOpAbsorption += 1;}
-    void AddOpAbsorptionPrior(void) {fOpAbsorptionPrior += 1;}
-
-    void AddFresnelRefraction(void) {
-      fBoundaryProcs[FresnelRefraction] += 1;
-    }
-    void AddFresnelReflection(void) {
-      fBoundaryProcs[FresnelReflection] += 1;
-    }
-    void AddTransmission(void) {fBoundaryProcs[Transmission] += 1;}
-    void AddTotalInternalReflection(void) 
-      {fBoundaryProcs[TotalInternalReflection] += 1;}
-    void AddLambertianReflection(void)  
-      {fBoundaryProcs[LambertianReflection] += 1;}
-    void AddLobeReflection(void) {fBoundaryProcs[LobeReflection] += 1;}
-    void AddSpikeReflection(void) {fBoundaryProcs[SpikeReflection] += 1;}
-    void AddBackScattering(void) {fBoundaryProcs[BackScattering] += 1;}
-    void AddAbsorption(void) {fBoundaryProcs[Absorption] += 1;}
-    void AddDetection(void) {fBoundaryProcs[Detection] += 1;}
-    void AddNotAtBoundary(void) {fBoundaryProcs[NotAtBoundary] += 1;}
-    void AddSameMaterial(void) {fBoundaryProcs[SameMaterial] += 1;}
-    void AddStepTooSmall(void) {fBoundaryProcs[StepTooSmall] += 1;}
-    void AddNoRINDEX(void) {fBoundaryProcs[NoRINDEX] += 1;}
-
-    void AddTotalSurface(void) {fTotalSurface += 1;}
-    void AddPolishedLumirrorAirReflection(void) 
-      {fBoundaryProcs[PolishedLumirrorAirReflection] += 1;}
-    void AddPolishedLumirrorGlueReflection(void) 
-      {fBoundaryProcs[PolishedLumirrorGlueReflection] += 1;}
-    void AddPolishedAirReflection(void) 
-      {fBoundaryProcs[PolishedAirReflection] += 1;}
-    void AddPolishedTeflonAirReflection(void) 
-      {fBoundaryProcs[PolishedTeflonAirReflection] += 1;}
-    void AddPolishedTiOAirReflection(void) 
-      {fBoundaryProcs[PolishedTiOAirReflection] += 1;}
-    void AddPolishedTyvekAirReflection(void) 
-      {fBoundaryProcs[PolishedTyvekAirReflection] += 1;}
-    void AddPolishedVM2000AirReflection(void) 
-      {fBoundaryProcs[PolishedVM2000AirReflection] += 1;}
-    void AddPolishedVM2000GlueReflection(void) 
-      {fBoundaryProcs[PolishedVM2000GlueReflection] += 1;}
-
-    void AddEtchedLumirrorAirReflection(void) 
-      {fBoundaryProcs[EtchedLumirrorAirReflection] += 1;}
-    void AddEtchedLumirrorGlueReflection(void) 
-      {fBoundaryProcs[EtchedLumirrorGlueReflection] += 1;}
-    void AddEtchedAirReflection(void) 
-      {fBoundaryProcs[EtchedAirReflection] += 1;}
-    void AddEtchedTeflonAirReflection(void) 
-      {fBoundaryProcs[EtchedTeflonAirReflection] += 1;}
-    void AddEtchedTiOAirReflection(void) 
-      {fBoundaryProcs[EtchedTiOAirReflection] += 1;}
-    void AddEtchedTyvekAirReflection(void) 
-      {fBoundaryProcs[EtchedTyvekAirReflection] += 1;}
-    void AddEtchedVM2000AirReflection(void) 
-      {fBoundaryProcs[EtchedVM2000AirReflection] += 1;}
-    void AddEtchedVM2000GlueReflection(void) 
-      {fBoundaryProcs[EtchedVM2000GlueReflection] += 1;}
-
-    void AddGroundLumirrorAirReflection(void) 
-      {fBoundaryProcs[GroundLumirrorAirReflection] += 1;}
-    void AddGroundLumirrorGlueReflection(void) 
-      {fBoundaryProcs[GroundLumirrorGlueReflection] += 1;}
-    void AddGroundAirReflection(void) 
-      {fBoundaryProcs[GroundAirReflection] += 1;}
-    void AddGroundTeflonAirReflection(void) 
-      {fBoundaryProcs[GroundTeflonAirReflection] += 1;}
-    void AddGroundTiOAirReflection(void) 
-      {fBoundaryProcs[GroundTiOAirReflection] += 1;}
-    void AddGroundTyvekAirReflection(void) 
-      {fBoundaryProcs[GroundTyvekAirReflection] += 1;}
-    void AddGroundVM2000AirReflection(void) 
-      {fBoundaryProcs[GroundVM2000AirReflection] += 1;}
-    void AddGroundVM2000GlueReflection(void) 
-      {fBoundaryProcs[GroundVM2000GlueReflection] += 1;}
-
-    void AddDichroic(void) {fBoundaryProcs[Dichroic] += 1;}
-
-    virtual void Merge(const G4Run*);
-
-    void EndOfRun();
-
-  private:
-    // primary particle
-    G4ParticleDefinition* fParticle;
-    G4double fEkin;
-
-    G4double fCerenkovEnergy;
-    G4double fScintEnergy;
-
-    // number of particles
-    G4int fCerenkovCount;
-    G4int fScintCount;
-    // number of events
-    G4int fRayleighCount;
-    
-    // non-boundary processes
-    G4int fOpAbsorption;
-
-    // prior to boundary:
-    G4int fOpAbsorptionPrior;
-
-    // boundary proc
-    std::vector<G4int> fBoundaryProcs;
-
-    G4int fTotalSurface;
-
-};
+//	Geant libraries
+#include <G4OpBoundaryProcess.hh>
+#include <G4Run.hh>
+#include <G4SystemOfUnits.hh>
+#include <G4UnitsTable.hh>
 
 
-#endif /* Run_h */
+//class G4ParticleDefinition;
+class Run: public G4Run{
+
+public:
+	Run();	//	default constructor
+	~Run(){};	//	default destructor
+
+	void SetPrimary( G4ParticleDefinition *particle, G4double energy );	//	set particle up
+	void AddAbsorption( void ){	//	increment absorption events
+		fBoundaryProcs[Absorption] += 1;
+	}
+	void AddBackScattering( void ){	//	increment backscattered events
+		fBoundaryProcs[BackScattering] += 1;
+	}
+	void AddDetection( void ){	//	increment detected events
+		fBoundaryProcs[Detection] += 1;
+	}
+	void AddDichroic( void ){	//	increment light beams
+		fBoundaryProcs[Dichroic] += 1;
+	}
+	void AddEtchedAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedAirReflection] += 1;
+	}
+	void AddEtchedLumirrorAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedLumirrorAirReflection] += 1;
+	}
+	void AddEtchedLumirrorGlueReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedLumirrorGlueReflection] += 1;
+	}
+	void AddEtchedTeflonAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedTeflonAirReflection] += 1;
+	}
+	void AddEtchedTiOAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedTiOAirReflection] += 1;
+	}
+	void AddEtchedTyvekAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedTyvekAirReflection] += 1;
+	}
+	void AddEtchedVM2000AirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedVM2000AirReflection] += 1;
+	}
+	void AddEtchedVM2000GlueReflection( void ){	//	increment reflected events
+		fBoundaryProcs[EtchedVM2000GlueReflection] += 1;
+	}
+	void AddFresnelReflection( void ){	//	increment reflected events
+		fBoundaryProcs[FresnelReflection] += 1;
+	}
+	void AddFresnelRefraction( void ){	//	increment reflected events
+		fBoundaryProcs[FresnelRefraction] += 1;
+	}
+	void AddGroundAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundAirReflection] += 1;
+	}
+	void AddGroundLumirrorAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundLumirrorAirReflection] += 1;
+	}
+	void AddGroundLumirrorGlueReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundLumirrorGlueReflection] += 1;
+	}
+	void AddGroundTeflonAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundTeflonAirReflection] += 1;
+	}
+	void AddGroundTiOAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundTiOAirReflection] += 1;
+	}
+	void AddGroundTyvekAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundTyvekAirReflection] += 1;
+	}
+	void AddGroundVM2000AirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundVM2000AirReflection] += 1;
+	}
+	void AddGroundVM2000GlueReflection( void ){	//	increment reflected events
+		fBoundaryProcs[GroundVM2000GlueReflection] += 1;
+	}
+	void AddLambertianReflection( void ){	//	increment reflected events
+		fBoundaryProcs[LambertianReflection] += 1;
+	}
+	void AddLobeReflection( void ){	//	increment reflected events
+		fBoundaryProcs[LobeReflection] += 1;
+	}
+	void AddNoRINDEX( void ){	//	increment no refractive index events
+		fBoundaryProcs[NoRINDEX] += 1;
+	}
+	void AddNotAtBoundary( void ){	//	increment events in material
+		fBoundaryProcs[NotAtBoundary] += 1;
+	}
+	void AddOpAbsorption( void ){	//	increment absorbed events
+		fOpAbs += 1;
+	}
+	void AddOpAbsorptionPrior( void ){	//	increment events absorbed before end
+		fOpAbsPrior += 1;
+	}
+	void AddPolishedAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedAirReflection] += 1;
+	}
+	void AddPolishedLumirrorAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedLumirrorAirReflection] += 1;
+	}
+	void AddPolishedLumirrorGlueReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedLumirrorGlueReflection] += 1;
+	}
+	void AddPolishedTeflonAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedTeflonAirReflection] += 1;
+	}
+	void AddPolishedTiOAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedTiOAirReflection] += 1;
+	}
+	void AddPolishedTyvekAirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedTyvekAirReflection] += 1;
+	}
+	void AddPolishedVM2000AirReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedVM2000AirReflection] += 1;
+	}
+	void AddPolishedVM2000GlueReflection( void ){	//	increment reflected events
+		fBoundaryProcs[PolishedVM2000GlueReflection] += 1;
+	}
+	void AddRayleigh( void ){	//	increment rayleigh scattered events
+		fRayleighN += 1;
+	}
+	void AddSameMaterial( void ){	//	increment event in same material
+		fBoundaryProcs[SameMaterial] += 1;
+	}
+	void AddScintillation( void ){	//	increment scintillated events
+		fScintN += 1;
+	}
+	void AddScintillationEnergy( G4double en ){	//	increment scintillated events
+		fScintE += en;
+	}
+	void AddSpikeReflection( void ){	//	increment reflected events
+		fBoundaryProcs[SpikeReflection] += 1;
+	}
+	void AddStepTooSmall( void ){	//	increment insignificant events
+		fBoundaryProcs[StepTooSmall] += 1;
+	}
+	void AddTotalInternalReflection( void ){	//	increment no refraction because of reflection events
+		fBoundaryProcs[TotalInternalReflection] += 1;
+	}
+	void AddTotalSurf( void ){	//	increment total surface events
+		fTotSurf += 1;
+	}
+	void AddTransmission( void ){	//	increment transmitted events
+		fBoundaryProcs[Transmission] += 1;
+	}
+
+	virtual void Merge( const G4Run * );	//	merge two particles
+	void EndOfRun();	//	method to run at end of tracking
+
+private:
+	G4ParticleDefinition *fParticle;	//	particle
+	G4double fEk;	//	kinetic energy of particle
+	G4double fScintE;	//	scintillator particle events
+	G4int fOpAbs;	//	absorption not at boundary
+	G4int fOpAbsPrior;	//	absorption prior to boundary
+	G4int fRayleighN;//	number of rayleigh events
+	G4int fScintN;	//	number of scintillator particles
+	G4int fTotSurf;	//	total surface events
+	std::vector<G4int> fBoundaryProcs;	//	vector of events at edge
+
+};	//	end Run{}
+#endif

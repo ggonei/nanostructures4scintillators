@@ -47,8 +47,7 @@
 					"G4RADIOACTIVEDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/RadioactiveDecay5.4",
 					"G4REALSURFACEDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/RealSurface2.1.1",
 					"G4SAIDXSDATA": "/home/gon/geant4.10.06.p03-install/share/Geant4-10.6.3/data/G4SAIDDATA2.0",
-					"XDG_DATA_DIRS": "/usr/local/share:/usr/share:/var/lib/snapd/desktop",
-					"XDG_RUNTIME_DIR": "/tmp/runtime-gon"
+					"XDG_DATA_DIRS": "/usr/local/share:/usr/share:/var/lib/snapd/desktop"
 				}
 			]
 		}
