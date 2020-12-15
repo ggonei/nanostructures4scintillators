@@ -97,16 +97,22 @@ private:
 	G4LogicalVolume *fWorldLogi;	//	entire detector
 	G4LogicalVolume *fCrystalLogi;	//	scintillating crystal basics
 	G4VPhysicalVolume *fCrystal;	//	scintillating crystal with materials
+	G4LogicalVolume *fNanoLogi;	//	scintillating crystal basics
+	G4VPhysicalVolume *fNano;	//	scintillating crystal with materials
 
 	//Materials
 	G4Material *fWorldMat;	//	entire detector
 	G4Material *fCrystalMat;	//	scintillator crystal
 	G4OpticalSurface *fSurf;	//	scintillator edge
+	G4Material *fNanoMat;	//	scintillator crystal
+	G4OpticalSurface *fNanoSurf;	//	scintillator edge
 
 	//Material Properties
 	G4MaterialPropertiesTable *fWorldMPT;	//	entire detector
 	G4MaterialPropertiesTable *fCrystalMPT;	//	scintillating crystal
 	G4MaterialPropertiesTable *fSurfMPT;	//	scintillator edge
+	G4MaterialPropertiesTable *fNanoMPT;	//	scintillating crystal
+	G4MaterialPropertiesTable *fNanoSurfMPT;	//	scintillator edge
 
 	//Position Properties
 	G4double fWorldX, fWorldY, fWorldZ;	//	entire detector

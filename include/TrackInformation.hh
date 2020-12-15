@@ -33,7 +33,8 @@ public:
 	inline void *operator new( size_t );	//	reference to overload operator new
 	inline void operator delete( void *aTrackInfo );	//	reference to overload operator delete
 	TrackInformation &operator =( const TrackInformation &aTrackInfo ){
-		fFirstCrystalX = aTrackInfo.fFirstCrystalX; return *this;
+		fFirstCrystalX = aTrackInfo.fFirstCrystalX;
+		return *this;
 	};	//	overload operator =
 	void SetSourceTrackInformation(){
 		fFirstCrystalX = true;

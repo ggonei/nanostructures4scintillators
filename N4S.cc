@@ -37,7 +37,6 @@ int main( int argc, char **argv ){
 	rMan->SetNumberOfThreads( std::min( G4Threading::G4GetNumberOfCores(), 4 ) );	//	use multicore
 	MyDetectorConstruction *det = new MyDetectorConstruction();	//	MANDATORY	//	create detector	//	CUSTOM
 	rMan->SetUserInitialization( det );	//	detector parameters
-
 	G4VModularPhysicsList *physList = new FTFP_BERT_HP;	//	MANDATORY	//	Fritiof Model + Bertini Cascade Model + High Precision Neutron Model
 	physList->ReplacePhysics( new G4EmLivermorePhysics() );	//	alter the physics used to Livermore model which is better at sub-GeV processes
 	G4OpticalPhysics *optPhys = new G4OpticalPhysics();	//	We are interested in the optical physics
@@ -53,9 +52,11 @@ int main( int argc, char **argv ){
 	G4UImanager *visualiserUI = G4UImanager::GetUIpointer();	//	get pointer to possible real window
 
 	if( ui ){	//	if there is a real window
-		visualiserUI->ApplyCommand( "/control/execute vis.mac" );	//	execute initial visualiser macro
+
+		visualiserUI->ApplyCommand( "/control/execute macros/runrunrun.mac" );	//	execute initial visualiser macro
 		ui->SessionStart();	//	open window for user
 		delete ui;	//	we are done with creating a user interface
+
 	} else	//	program is running in batch mode
 		visualiserUI->ApplyCommand( "/control/execute " + (G4String)argv[1] );	//	so just execute the macro requested
 

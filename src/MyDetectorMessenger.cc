@@ -6,63 +6,65 @@
 
 MyDetectorMessenger::MyDetectorMessenger( MyDetectorConstruction *Det ):G4UImessenger(), fMyDetector( Det ){	//	construct messenger
 
-	fOpticalDir = new G4UIdirectory( "/MyDetector/" );	//	set directory
+	fOpticalDir = new G4UIdirectory( "/n4s/" );	//	set directory
 	fOpticalDir->SetGuidance( "Parameters for optical simulation." );	//	inform user why
+	//	list of commands
+	fWorldMatCmd = new G4UIcmdWithAString( "/n4s/worldMat", this );	//	set entire detector material
+	fWorldMatPropConstCmd = new G4UIcmdWithAString( "/n4s/worldConstProperty", this );	//	add entire detector material property as number
+	fWorldMatPropVectorCmd = new G4UIcmdWithAString( "/n4s/worldProperty", this );	//	add entire detector material property
+	fCrystalMatCmd = new G4UIcmdWithAString( "/n4s/boxMat", this );	//	set scintillator crystal material
+	fCrystalMatPropConstCmd = new G4UIcmdWithAString( "/n4s/boxConstProperty", this );	//	add scintillator crystal material property as number
+	fCrystalMatPropVectorCmd = new G4UIcmdWithAString( "/n4s/boxProperty", this );	//	add scintillator crystal material property
+	fSurfFinishCmd = new G4UIcmdWithAString( "/n4s/surfaceFinish", this );	//	set scintillator surface finish
+	fSurfMatPropConstCmd = new G4UIcmdWithAString( "/n4s/surfaceConstProperty", this );	//	add scintillator surface material property as number
+	fSurfMatPropVectorCmd = new G4UIcmdWithAString( "/n4s/surfaceProperty", this );	//	add scintillator surface material property
+	fSurfModelCmd = new G4UIcmdWithAString( "/n4s/surfaceModel", this );	//	set scintillator surface model
+	fSurfPolishCmd = new G4UIcmdWithADouble( "/n4s/surfacePolish", this );	//	set scintillator surface polish type
+	fSurfSigmaAlphaCmd = new G4UIcmdWithADouble( "/n4s/surfaceSigmaAlpha", this );	//	set scintillator surface roughness
+	fSurfTypeCmd = new G4UIcmdWithAString( "/n4s/surfaceType", this );	//	set scintillator surface type
+	//	end list of commands
 
 	//	entire detector
-	fWorldMatCmd = new G4UIcmdWithAString( "/MyDetector/WorldMat", this );	//	set entire detector material
 	fWorldMatCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fWorldMatCmd->SetGuidance( "Set material of world." );	//	inform user why
 	fWorldMatCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fWorldMatPropConstCmd = new G4UIcmdWithAString( "/MyDetector/worldConstProperty", this );	//	add entire detector material property as number
 	fWorldMatPropConstCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fWorldMatPropConstCmd->SetGuidance( "Set material constant property for the world." );	//	inform user why
 	fWorldMatPropConstCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fWorldMatPropVectorCmd = new G4UIcmdWithAString( "/MyDetector/worldProperty", this );	//	add entire detector material property
 	fWorldMatPropVectorCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fWorldMatPropVectorCmd->SetGuidance( "Set material property vector for the world." );	//	inform user why
 	fWorldMatPropVectorCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
 
 	//	scintillating crystal
-	fCrystalMatCmd = new G4UIcmdWithAString( "/MyDetector/boxMaterial", this );	//	set scintillator crystal material
 	fCrystalMatCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fCrystalMatCmd->SetGuidance( "Set material of box." );	//	inform user why
 	fCrystalMatCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fCrystalMatPropConstCmd = new G4UIcmdWithAString( "/MyDetector/boxConstProperty", this );	//	add scintillator crystal material property as number
 	fCrystalMatPropConstCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fCrystalMatPropConstCmd->SetGuidance( "Set material constant property for the box." );	//	inform user why
 	fCrystalMatPropConstCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fCrystalMatPropVectorCmd = new G4UIcmdWithAString( "/MyDetector/boxProperty", this );	//	add scintillator crystal material property
 	fCrystalMatPropVectorCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fCrystalMatPropVectorCmd->SetGuidance( "Set material property vector for the box." );	//	inform user why
 	fCrystalMatPropVectorCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
 
 	//	scintillating surface
-	fSurfFinishCmd = new G4UIcmdWithAString( "/MyDetector/surfaceFinish", this );	//	set scintillator surface finish
 	fSurfFinishCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfFinishCmd->SetGuidance( "Surface finish." );	//	inform user why
 	fSurfFinishCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fSurfMatPropConstCmd = new G4UIcmdWithAString( "/MyDetector/surfaceConstProperty", this );	//	add scintillator surface material property as number
 	fSurfMatPropConstCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfMatPropConstCmd->SetGuidance( "Set material constant property for the surface." );	//	inform user why
 	fSurfMatPropConstCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fSurfMatPropVectorCmd = new G4UIcmdWithAString( "/MyDetector/surfaceProperty", this );	//	add scintillator surface material property
 	fSurfMatPropVectorCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfMatPropVectorCmd->SetGuidance( "Set material property vector for the surface." );	//	inform user why
 	fSurfMatPropVectorCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fSurfModelCmd = new G4UIcmdWithAString( "/MyDetector/surfaceModel", this );	//	set scintillator surface model
 	fSurfModelCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfModelCmd->SetGuidance( "Surface model." );	//	inform user why
 	fSurfModelCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fSurfPolishCmd = new G4UIcmdWithADouble( "/MyDetector/SurfacePolish", this );	//	set scintillator surface polish type
 	fSurfPolishCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfPolishCmd->SetGuidance( "surface polish parameter (for Glisur model)." );	//	inform user why
 	fSurfPolishCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fSurfSigmaAlphaCmd = new G4UIcmdWithADouble( "/MyDetector/surfaceSigmaAlpha", this );	//	set scintillator surface roughness
 	fSurfSigmaAlphaCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfSigmaAlphaCmd->SetGuidance( "Surface sigma alpha parameter." );	//	inform user why
 	fSurfSigmaAlphaCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
-	fSurfTypeCmd = new G4UIcmdWithAString( "/MyDetector/surfaceType", this );	//	set scintillator surface type
 	fSurfTypeCmd->AvailableForStates( G4State_PreInit, G4State_Idle );	//	restrict application
 	fSurfTypeCmd->SetGuidance( "Surface type." );//	inform user why
 	fSurfTypeCmd->SetToBeBroadcasted( false );	//	do not send to worker threads
@@ -193,7 +195,7 @@ void MyDetectorMessenger::SetNewValue( G4UIcommand *cmd, G4String messStr ){	//	
 			fMyDetector->SetSurfModel( dichroic );
 		} else{
 			e << "Invalid surface model: " << messStr;	//	tell user what failed
-			G4Exception( "MyDetectorMessenger", "ONovice2_001", FatalException, e );	//	send failure
+			G4Exception( "MyDetectorMessenger", "MyDetector_001", FatalException, e );	//	send failure
 		}	//	end string check
 
 	}	//	end set scintillating surface model
@@ -213,11 +215,14 @@ void MyDetectorMessenger::SetNewValue( G4UIcommand *cmd, G4String messStr ){	//	
 			G4Exception( "MyDetectorMessenger", "MyDetector_002", FatalException, e );	//	send failure
 		}
 
-	} else if( cmd == fSurfSigmaAlphaCmd ){	//	set scintillating surface roughness
+	}
+	else if( cmd == fSurfSigmaAlphaCmd ){	//	set scintillating surface roughness
 		fMyDetector->SetSurfSigmaAlpha( G4UIcmdWithADouble::GetNewDoubleValue( messStr ) );
-	} else if( cmd == fSurfPolishCmd ){	//	set scintillating surface polish level
+	}
+	else if( cmd == fSurfPolishCmd ){	//	set scintillating surface polish level
 		fMyDetector->SetSurfPolish( G4UIcmdWithADouble::GetNewDoubleValue( messStr ) );
-	} else if( cmd == fWorldMatPropVectorCmd || cmd == fCrystalMatPropVectorCmd || cmd == fSurfMatPropVectorCmd ){	//	add material property as a vector
+	}
+	else if( cmd == fWorldMatPropVectorCmd || cmd == fCrystalMatPropVectorCmd || cmd == fSurfMatPropVectorCmd ){	//	add material property as a vector
 		G4MaterialPropertyVector *mpv = new G4MaterialPropertyVector();	//	create new vector
 		std::istringstream instring( messStr );	//	convert fetched string into stream
 		G4String prop;	//	initialise property string
@@ -236,9 +241,12 @@ void MyDetectorMessenger::SetNewValue( G4UIcommand *cmd, G4String messStr ){	//	
 			mpv->InsertValues( en, val );	//	insert new material property to vector
 		}	//	end while loop
 
-		if( cmd == fWorldMatPropVectorCmd ) fMyDetector->AddAnotherMPV( fMyDetector->GetWorldMatPropertiesTable(), c, mpv );	//	add new material property vector to entire detector
-		else if( cmd == fCrystalMatPropVectorCmd ) fMyDetector->AddAnotherMPV( fMyDetector->GetCrystalMatPropertiesTable(), c, mpv );	//	add new material property vector to scintillating crystal
-		else if( cmd == fSurfMatPropVectorCmd ) fMyDetector->AddAnotherMPV( fMyDetector->GetSurfMatPropertiesTable(), c, mpv );	//	add new material property vector to scintillating surface
+		if( cmd == fWorldMatPropVectorCmd )
+			fMyDetector->AddAnotherMPV( fMyDetector->GetWorldMatPropertiesTable(), c, mpv );	//	add new material property vector to entire detector
+		else if( cmd == fCrystalMatPropVectorCmd )
+			fMyDetector->AddAnotherMPV( fMyDetector->GetCrystalMatPropertiesTable(), c, mpv );	//	add new material property vector to scintillating crystal
+		else if( cmd == fSurfMatPropVectorCmd )
+			fMyDetector->AddAnotherMPV( fMyDetector->GetSurfMatPropertiesTable(), c, mpv );	//	add new material property vector to scintillating surface
 
 	}
 	else if( cmd == fWorldMatPropConstCmd || cmd == fCrystalMatPropConstCmd || cmd == fSurfMatPropConstCmd ){	//	add material property as a number

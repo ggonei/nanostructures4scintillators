@@ -39,7 +39,6 @@ public:
 	};	//	end *GetParticleGun()
 
 	void SetOptPhotonPolar();	//	polarise photons
-	void SetOptPhotonPolar( G4double );	//	polarise a factor of photons
 
 
 private:

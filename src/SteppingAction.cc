@@ -25,8 +25,7 @@ void SteppingAction::UserSteppingAction( const G4Step *step ){	//	create action 
 			if( trackInfo->GetIsFirstCrystalX() )	//	check if particle is in first crystal
 				run->AddOpAbsorptionPrior();	//	increment absorption prior to edge counter
 
-		} else if( pds->GetProcessName() == "OpRayleigh" )	//	 if our particle rayleigh scattered
-			run->AddRayleigh();	//	increment rayleigh counter
+		}
 
 		if( endPoint->GetStepStatus() == fGeomBoundary ){	//	if particle has scattered to boundary
 
@@ -38,20 +37,13 @@ void SteppingAction::UserSteppingAction( const G4Step *step ){	//	create action 
 			G4ProcessManager *OpManager = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();	//	fetch optical photon
 			G4int loopMax = OpManager->GetPostStepProcessVector()->entries();	//	maximum number of steps to loop over
 			G4ProcessVector *postStepDoItVector = OpManager->GetPostStepProcessVector( typeDoIt );	//	process vector at end of steps
-
+/*			G4ThreeVector momdir = endPoint->GetMomentumDirection();	//	fetch momentum now
+			G4double px1 = momdir.x();	//	momentum x
+			G4double py1 = momdir.y();	//	momentum y
+			G4double pz1 = momdir.z();	//	momentum z
+*/
 			if( trackInfo->GetIsFirstCrystalX() ){	//	if we are in the first crystal
 
-				G4ThreeVector momdir = endPoint->GetMomentumDirection();	//	fetch momentum now
-				G4double px1 = momdir.x();	//	momentum x
-				G4double py1 = momdir.y();	//	momentum y
-				G4double pz1 = momdir.z();	//	momentum z
-
-				if( px1 < 0 )	//	if we have negative momentum
-					whichH = 0;	//	fill in the correct histogram
-
-				analysisMan->FillH1( 4 + whichH, px1 );	//	fill momentum x histogram
-				analysisMan->FillH1( 5 + whichH, py1 );	//	fill momentum y histogram
-				analysisMan->FillH1( 6 + whichH, pz1 );	//	fill momentum z histogram
 				trackInfo->SetIsFirstCrystalX( false );	//	set flag so we do not fill again
 				run->AddTotalSurf();	//	increment surface
 
@@ -63,19 +55,11 @@ void SteppingAction::UserSteppingAction( const G4Step *step ){	//	create action 
 					if( opProc ){	//	if we have a boundary process
 
 						thisState = opProc->GetStatus();	//	get state of particle
-						analysisMan->FillH1( 3, thisState );	//	fill histogram
+						analysisMan->FillH1( 1, thisState );	//	fill state histogram
 
 						if( thisState == Transmission )	//	if transmission event
 							run->AddTransmission();	//	increment transmission count
 
-						else if( thisState == FresnelRefraction ){	//	if fresnel refraction
-
-							run->AddFresnelRefraction();	//	increment counter
-							analysisMan->FillH1( 10, px1 );	//	fill momentum x refracted histogram
-							analysisMan->FillH1( 11, py1 );	//	fill momentum y refracted histogram
-							analysisMan->FillH1( 12, pz1 );	//	fill momentum z refracted histogram
-
-						}	//	end fresnel refraction check
 						//	for a variety of surface events...
 						else if( thisState == Absorption )
 							run->AddAbsorption();
@@ -160,8 +144,18 @@ void SteppingAction::UserSteppingAction( const G4Step *step ){	//	create action 
 				}	//	end for loop over steps
 
 			}	//	end first crystal check
+/*			else{
 
-		}	//	end boundary check
+				if( px1 < 0 )	//	if we have negative momentum
+					whichH = 0;	//	fill in the correct histogram
+
+				analysisMan->FillH1( 2 + whichH, px1 );	//	fill final momentum x histogram
+				analysisMan->FillH1( 3 + whichH, py1 );	//	fill final momentum y histogram
+				analysisMan->FillH1( 4 + whichH, pz1 );	//	fill final momentum z histogram
+
+			}
+
+*/		}	//	end boundary check
 
 	}	//	end optical photon check
 

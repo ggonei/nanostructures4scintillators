@@ -33,15 +33,7 @@ void PrimaryGeneratorAction::GeneratePrimaries( G4Event *anEvent ){	//	create ma
 }	//	end GeneratePrimaries( G4Event )
 
 
-void PrimaryGeneratorAction::SetOptPhotonPolar(){	//	set polarisation of photons
-
-	G4double angle = G4UniformRand() * 360.0 * deg;	//	get a random angle
-	SetOptPhotonPolar( angle );	//	set polarisation to that angle
-
-}	//	end SetOptPhotonPolar
-
-
-void PrimaryGeneratorAction::SetOptPhotonPolar( G4double angle ){	//	add polarisation to photons
+void PrimaryGeneratorAction::SetOptPhotonPolar(){	//	add polarisation to photons
 
 	if( fParticleGun->GetParticleDefinition()->GetParticleName() != "opticalphoton" ){	//	if particle is not a photon
 
@@ -50,6 +42,7 @@ void PrimaryGeneratorAction::SetOptPhotonPolar( G4double angle ){	//	add polaris
 
 	}	//	end particle type check
 
+	G4double angle = G4UniformRand() * 360.0 * deg;	//	get a random angle
 	G4ThreeVector normal( 1., 0., 0. );	//	x focused vector
 	G4ThreeVector kphoton = fParticleGun->GetParticleMomentumDirection();	//	get particle momentum
 	G4ThreeVector product = normal.cross( kphoton );	//	get resultant momentum-x for photon
@@ -60,4 +53,4 @@ void PrimaryGeneratorAction::SetOptPhotonPolar( G4double angle ){	//	add polaris
 	G4ThreeVector e_paralle = e_perpend.cross( kphoton );	//	get a parallel vector to our original photon
 	fParticleGun->SetParticlePolarization( std::cos( angle ) * e_paralle + std::sin( angle ) * e_perpend );	//	set particle polarisation in polar coordinates
 
-}	//	end SetOptPhotonPolar( G4double )
+}	//	end SetOptPhotonPolar()

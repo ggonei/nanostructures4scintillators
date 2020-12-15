@@ -25,6 +25,9 @@ target_link_libraries(N4S ${Geant4_LIBRARIES} )
 
 # Copy all scripts to the build directory
 set(n4s_SCRIPTS
+    macros/example.mac
+    macros/setup.mac
+    macros/runrunrun.mac
   )
 
 foreach(_script ${n4s_SCRIPTS})

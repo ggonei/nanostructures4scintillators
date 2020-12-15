@@ -33,7 +33,7 @@ public:
 private:
 	PrimaryGeneratorAction *fPrimaryAction;	//	user action
 	G4UIdirectory *fGunDir;	//	gun command prefix
-	G4UIcmdWithADoubleAndUnit *fPolarCmd;	//	polarisation updater
+	G4UIcommand *fPolarCmd;	//	polarisation updater
 
 };	//	end PrimaryGeneratorMessenger
 #endif
